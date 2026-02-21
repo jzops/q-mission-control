@@ -52,18 +52,15 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000)
 
-## Deployment
+## Deployment (Replit)
 
-Deploy to any static host (Vercel, Netlify, etc.) with:
-```bash
-npm run build
-```
+1. Import from GitHub: https://github.com/jzops/q-mission-control
+2. In Replit shell, run: `npx convex deploy` (creates production backend)
+3. Copy the deployment URL from Convex
+4. Add secret in Replit: `NEXT_PUBLIC_CONVEX_URL=https://your-project.convex.cloud`
+5. Click Deploy!
 
-Or deploy to **Replit** (preferred):
-1. Import the project
-2. Add environment variables
-3. Run `npx convex deploy` for production Convex backend
-4. Deploy!
+**Note:** Do NOT use Vercel.
 
 ## Integration with OpenClaw
 
