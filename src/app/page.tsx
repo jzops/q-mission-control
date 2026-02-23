@@ -4,6 +4,15 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import Link from "next/link";
 import { ActivityFeed, ActivitySparkline } from "../components/ActivityFeed";
+import { useEffect, useState } from "react";
+
+interface ProfitData {
+  mrr: string;
+  profit: string;
+  margin: string;
+  target: string;
+  trending?: string;
+}
 
 export default function Dashboard() {
   const tasks = useQuery(api.tasks.list);
@@ -13,6 +22,18 @@ export default function Dashboard() {
   const cronJobs = useQuery(api.cronJobs.listActive);
   const systemStatus = useQuery(api.systemStatus.getAll);
   const recentActivityCount = useQuery(api.activity.getRecentCount, { hours: 24 });
+
+  const [profitData, setProfitData] = useState<ProfitData | null>(null);
+
+  // Fetch profit data from Google Sheet
+  useEffect(() => {
+    fetch('/api/profit')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) setProfitData(data.data);
+      })
+      .catch(console.error);
+  }, []);
 
   const todoTasks = tasks?.filter((t) => t.status === "todo").length ?? 0;
   const inProgressTasks = tasks?.filter((t) => t.status === "in_progress").length ?? 0;
@@ -68,16 +89,56 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Activity Sparkline */}
-      <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h3 className="font-semibold">Activity (24h)</h3>
-            <p className="text-sm text-gray-400">{recentActivityCount || 0} actions</p>
+      {/* Activity + Profit Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Activity Sparkline */}
+        <div className="lg:col-span-2 bg-gray-900 rounded-xl p-4 border border-gray-800">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h3 className="font-semibold">Activity (24h)</h3>
+              <p className="text-sm text-gray-400">{recentActivityCount || 0} actions</p>
+            </div>
+            <div className="text-right">
+              <ActivitySparkline hours={24} />
+            </div>
           </div>
-          <div className="text-right">
-            <ActivitySparkline hours={24} />
-          </div>
+        </div>
+
+        {/* Profit Tracker */}
+        <div className="bg-gradient-to-br from-green-900/40 to-emerald-900/20 rounded-xl p-4 border border-green-800/50">
+          <h3 className="font-semibold mb-3 flex items-center gap-2">
+            💰 Q1 Profit
+            {profitData?.trending === 'up' && <span className="text-green-400 text-xs">↑</span>}
+          </h3>
+          {profitData ? (
+            <div className="space-y-3">
+              <div className="flex justify-between items-end">
+                <div>
+                  <p className="text-xs text-gray-400">Current</p>
+                  <p className="text-2xl font-bold text-green-400">{profitData.profit}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-gray-400">Target</p>
+                  <p className="text-lg font-semibold text-gray-300">{profitData.target}</p>
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-xs text-gray-400 mb-1">
+                  <span>Progress</span>
+                  <span>{profitData.margin}</span>
+                </div>
+                <div className="bg-gray-800 rounded-full h-2">
+                  <div 
+                    className="bg-green-500 h-2 rounded-full transition-all" 
+                    style={{ width: profitData.margin }}
+                  ></div>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500">MRR: {profitData.mrr}</p>
+            </div>
+          ) : (
+            <p className="text-gray-500 text-sm">Loading...</p>
+          )}
         </div>
       </div>
 
