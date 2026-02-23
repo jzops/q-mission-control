@@ -49,14 +49,14 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Header with Q Status */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold mb-2">Welcome back, Joe</h2>
-          <p className="text-gray-400">Here's what Q is working on today.</p>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Welcome back, Joe</h2>
+          <p className="text-gray-400 text-sm sm:text-base">Here's what Q is working on today.</p>
         </div>
         
-        {/* Q Status Card */}
-        <div className={`px-5 py-4 rounded-xl border transition-all ${
+        {/* Q Status Card - hidden on mobile since it's in the header */}
+        <div className={`hidden sm:block px-5 py-4 rounded-xl border transition-all flex-shrink-0 ${
           isOnline 
             ? "bg-gradient-to-br from-green-900/50 to-gray-900 border-green-700" 
             : "bg-gray-900 border-gray-700"

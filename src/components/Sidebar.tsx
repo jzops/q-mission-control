@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { useState, useEffect } from "react";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: "🏠" },
@@ -25,6 +26,7 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
   const systemStatus = useQuery(api.systemStatus.getAll);
   const pendingApprovals = useQuery(api.approvals.getPendingCount);
   const pendingQuestions = useQuery(api.questions.getPendingCount);
@@ -38,6 +40,20 @@ export function Sidebar() {
   const isOnline = lastHeartbeat && (Date.now() - lastHeartbeat) < 5 * 60 * 1000;
   const timeSinceHeartbeat = lastHeartbeat ? formatTimeAgo(Date.now() - lastHeartbeat) : "Never";
 
+  // Close sidebar when route changes (mobile)
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
+
+  // Close on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsOpen(false);
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, []);
+
   const getBadgeCount = (key: string) => {
     switch (key) {
       case "approvals": return pendingApprovals?.total || 0;
@@ -47,14 +63,28 @@ export function Sidebar() {
     }
   };
 
-  return (
-    <aside className="w-64 bg-gray-900 border-r border-gray-800 p-4 flex flex-col h-screen overflow-y-auto">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-white flex items-center gap-2">
-          <span className="animate-pulse">⚡</span>
-          <span>Mission Control</span>
-        </h1>
-        <p className="text-xs text-gray-400 mt-1">Q's Command Center</p>
+  const totalBadges = (pendingApprovals?.total || 0) + (pendingQuestions?.total || 0) + (unreviewedDecisions || 0);
+
+  const sidebarContent = (
+    <>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+            <span className="animate-pulse">⚡</span>
+            <span>Mission Control</span>
+          </h1>
+          <p className="text-xs text-gray-400 mt-1">Q's Command Center</p>
+        </div>
+        {/* Close button - mobile only */}
+        <button 
+          onClick={() => setIsOpen(false)}
+          className="md:hidden p-2 text-gray-400 hover:text-white"
+          aria-label="Close menu"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
       
       <nav className="space-y-0.5 flex-1">
@@ -70,15 +100,15 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-200 ${
+              className={`flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 ${
                 isActive
                   ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/20"
                   : "text-gray-300 hover:bg-gray-800 hover:text-white"
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className="text-base">{item.icon}</span>
-                <span className="text-sm">{item.label}</span>
+                <span className="text-lg">{item.icon}</span>
+                <span className="text-sm font-medium">{item.label}</span>
               </div>
               {badgeCount > 0 && (
                 <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
@@ -124,7 +154,55 @@ export function Sidebar() {
           </div>
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-gray-900 border-b border-gray-800 px-4 py-3 flex items-center justify-between">
+        <button
+          onClick={() => setIsOpen(true)}
+          className="p-2 -ml-2 text-gray-400 hover:text-white"
+          aria-label="Open menu"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <h1 className="text-lg font-bold text-white flex items-center gap-2">
+          <span>⚡</span>
+          <span>Mission Control</span>
+        </h1>
+        <div className="flex items-center gap-2">
+          {totalBadges > 0 && (
+            <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+              {totalBadges}
+            </span>
+          )}
+          <div className={`w-2 h-2 rounded-full ${isOnline ? "bg-green-500" : "bg-gray-500"}`} />
+        </div>
+      </div>
+
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`
+        fixed md:static inset-y-0 left-0 z-50
+        w-72 md:w-64 bg-gray-900 border-r border-gray-800 p-4 flex flex-col
+        transform transition-transform duration-300 ease-in-out
+        ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+        h-screen overflow-y-auto
+      `}>
+        {sidebarContent}
+      </aside>
+    </>
   );
 }
 
