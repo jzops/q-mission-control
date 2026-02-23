@@ -80,10 +80,10 @@ export default defineSchema({
   }).index("by_role", ["role"])
     .index("by_status", ["status"]),
 
-  // Cron Jobs - NEW
+  // Cron Jobs
   cronJobs: defineTable({
     name: v.string(),
-    schedule: v.string(), // cron expression
+    schedule: v.string(),
     description: v.optional(v.string()),
     lastRun: v.optional(v.number()),
     nextRun: v.optional(v.number()),
@@ -94,7 +94,7 @@ export default defineSchema({
   }).index("by_status", ["status"])
     .index("by_nextRun", ["nextRun"]),
 
-  // People / Contacts - NEW
+  // People / Contacts
   people: defineTable({
     name: v.string(),
     relationship: v.union(
@@ -117,10 +117,10 @@ export default defineSchema({
       filterFields: ["relationship"],
     }),
 
-  // Activity log - ENHANCED
+  // Activity log
   activity: defineTable({
     agentId: v.optional(v.id("agents")),
-    agentName: v.optional(v.string()), // For when we don't have an agent ID
+    agentName: v.optional(v.string()),
     type: v.union(
       v.literal("task_started"),
       v.literal("task_completed"),
@@ -129,21 +129,156 @@ export default defineSchema({
       v.literal("cron_executed"),
       v.literal("heartbeat"),
       v.literal("session_started"),
+      v.literal("decision_made"),
+      v.literal("approval_requested"),
+      v.literal("question_asked"),
       v.literal("error"),
       v.literal("info")
     ),
     action: v.string(),
     details: v.optional(v.string()),
-    metadata: v.optional(v.string()), // JSON string for flexible data
+    metadata: v.optional(v.string()),
     timestamp: v.number(),
   }).index("by_agent", ["agentId"])
     .index("by_timestamp", ["timestamp"])
     .index("by_type", ["type"]),
 
-  // System Status - NEW
+  // System Status
   systemStatus: defineTable({
-    key: v.string(), // "q_status", "last_heartbeat", etc.
+    key: v.string(),
     value: v.string(),
     updatedAt: v.number(),
   }).index("by_key", ["key"]),
+
+  // ============ PHASE 1: VISIBILITY & TRUST ============
+
+  // Session Log - What Q did while you were away
+  sessions: defineTable({
+    date: v.string(), // YYYY-MM-DD
+    summary: v.optional(v.string()), // AI-generated summary of the day
+    totalActions: v.optional(v.number()),
+    categories: v.optional(v.string()), // JSON: {email: 3, coding: 2, research: 1}
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_date", ["date"]),
+
+  // Session Entries - Individual actions within a session
+  sessionEntries: defineTable({
+    sessionId: v.optional(v.id("sessions")),
+    date: v.string(), // YYYY-MM-DD for querying without session
+    type: v.union(
+      v.literal("email"),
+      v.literal("coding"),
+      v.literal("research"),
+      v.literal("automation"),
+      v.literal("communication"),
+      v.literal("memory"),
+      v.literal("other")
+    ),
+    action: v.string(), // What was done
+    reasoning: v.optional(v.string()), // Why it was done
+    outcome: v.optional(v.string()), // What happened
+    duration: v.optional(v.number()), // Minutes spent
+    relatedTo: v.optional(v.string()), // Project/person/task this relates to
+    timestamp: v.number(),
+  }).index("by_session", ["sessionId"])
+    .index("by_date", ["date"])
+    .index("by_type", ["type"])
+    .index("by_timestamp", ["timestamp"]),
+
+  // Decisions Log - Autonomous decisions Q made
+  decisions: defineTable({
+    title: v.string(), // Short description
+    description: v.string(), // What was decided
+    alternatives: v.optional(v.string()), // JSON array of alternatives considered
+    reasoning: v.string(), // Why this choice was made
+    category: v.union(
+      v.literal("email"),
+      v.literal("scheduling"),
+      v.literal("prioritization"),
+      v.literal("communication"),
+      v.literal("technical"),
+      v.literal("other")
+    ),
+    impact: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    feedback: v.optional(v.union(v.literal("good"), v.literal("bad"), v.literal("neutral"))),
+    feedbackNote: v.optional(v.string()),
+    reviewed: v.boolean(),
+    timestamp: v.number(),
+  }).index("by_reviewed", ["reviewed"])
+    .index("by_feedback", ["feedback"])
+    .index("by_timestamp", ["timestamp"])
+    .index("by_category", ["category"]),
+
+  // Questions Queue - Things Q wants to ask
+  questions: defineTable({
+    question: v.string(),
+    context: v.optional(v.string()), // Background info
+    category: v.union(
+      v.literal("clarification"),
+      v.literal("permission"),
+      v.literal("preference"),
+      v.literal("decision"),
+      v.literal("feedback"),
+      v.literal("other")
+    ),
+    priority: v.union(v.literal("urgent"), v.literal("normal"), v.literal("low")),
+    status: v.union(v.literal("pending"), v.literal("answered"), v.literal("dismissed")),
+    answer: v.optional(v.string()),
+    answeredAt: v.optional(v.number()),
+    relatedTo: v.optional(v.string()), // What this question is about
+    timestamp: v.number(),
+  }).index("by_status", ["status"])
+    .index("by_priority", ["priority"])
+    .index("by_timestamp", ["timestamp"]),
+
+  // Approvals Queue - Things waiting for human approval
+  approvals: defineTable({
+    title: v.string(),
+    description: v.string(),
+    type: v.union(
+      v.literal("email_send"),
+      v.literal("social_post"),
+      v.literal("purchase"),
+      v.literal("external_action"),
+      v.literal("code_deploy"),
+      v.literal("other")
+    ),
+    content: v.optional(v.string()), // The actual content (email body, tweet, etc)
+    metadata: v.optional(v.string()), // JSON with additional data
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+    priority: v.union(v.literal("urgent"), v.literal("normal"), v.literal("low")),
+    feedback: v.optional(v.string()), // Human's note on why approved/rejected
+    decidedAt: v.optional(v.number()),
+    expiresAt: v.optional(v.number()), // Auto-expire if not acted on
+    timestamp: v.number(),
+  }).index("by_status", ["status"])
+    .index("by_type", ["type"])
+    .index("by_priority", ["priority"])
+    .index("by_timestamp", ["timestamp"]),
+
+  // Lessons Learned - Feedback-driven learning
+  lessons: defineTable({
+    title: v.string(),
+    description: v.string(), // What happened
+    lesson: v.string(), // What was learned
+    category: v.union(
+      v.literal("communication"),
+      v.literal("technical"),
+      v.literal("prioritization"),
+      v.literal("style"),
+      v.literal("process"),
+      v.literal("other")
+    ),
+    source: v.union(
+      v.literal("feedback"),
+      v.literal("correction"),
+      v.literal("observation"),
+      v.literal("explicit")
+    ),
+    applied: v.boolean(), // Has this been incorporated into behavior?
+    timestamp: v.number(),
+  }).index("by_category", ["category"])
+    .index("by_applied", ["applied"])
+    .index("by_timestamp", ["timestamp"]),
 });
