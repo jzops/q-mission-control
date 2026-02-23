@@ -34,14 +34,21 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_stage", ["stage"]),
 
-  // Calendar Events (scheduled tasks & cron jobs)
+  // Calendar Events
   events: defineTable({
     title: v.string(),
     description: v.optional(v.string()),
-    type: v.union(v.literal("task"), v.literal("cron"), v.literal("meeting")),
+    type: v.union(
+      v.literal("task"),
+      v.literal("cron"),
+      v.literal("meeting"),
+      v.literal("birthday"),
+      v.literal("deadline"),
+      v.literal("reminder")
+    ),
     startTime: v.number(),
     endTime: v.optional(v.number()),
-    recurring: v.optional(v.string()), // cron expression if recurring
+    recurring: v.optional(v.string()),
     completed: v.boolean(),
     createdAt: v.number(),
   }).index("by_start", ["startTime"])
@@ -53,7 +60,7 @@ export default defineSchema({
     content: v.string(),
     category: v.optional(v.string()),
     tags: v.optional(v.array(v.string())),
-    source: v.optional(v.string()), // conversation, observation, etc.
+    source: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_category", ["category"])
     .searchIndex("search_content", {
@@ -73,12 +80,70 @@ export default defineSchema({
   }).index("by_role", ["role"])
     .index("by_status", ["status"]),
 
-  // Activity log for the Office view
+  // Cron Jobs - NEW
+  cronJobs: defineTable({
+    name: v.string(),
+    schedule: v.string(), // cron expression
+    description: v.optional(v.string()),
+    lastRun: v.optional(v.number()),
+    nextRun: v.optional(v.number()),
+    status: v.union(v.literal("active"), v.literal("paused"), v.literal("failed")),
+    lastOutput: v.optional(v.string()),
+    runCount: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index("by_status", ["status"])
+    .index("by_nextRun", ["nextRun"]),
+
+  // People / Contacts - NEW
+  people: defineTable({
+    name: v.string(),
+    relationship: v.union(
+      v.literal("family"),
+      v.literal("team"),
+      v.literal("client"),
+      v.literal("contact")
+    ),
+    company: v.optional(v.string()),
+    email: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    birthday: v.optional(v.number()),
+    lastContact: v.optional(v.number()),
+    avatar: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_relationship", ["relationship"])
+    .searchIndex("search_name", {
+      searchField: "name",
+      filterFields: ["relationship"],
+    }),
+
+  // Activity log - ENHANCED
   activity: defineTable({
-    agentId: v.id("agents"),
+    agentId: v.optional(v.id("agents")),
+    agentName: v.optional(v.string()), // For when we don't have an agent ID
+    type: v.union(
+      v.literal("task_started"),
+      v.literal("task_completed"),
+      v.literal("email_drafted"),
+      v.literal("memory_added"),
+      v.literal("cron_executed"),
+      v.literal("heartbeat"),
+      v.literal("session_started"),
+      v.literal("error"),
+      v.literal("info")
+    ),
     action: v.string(),
     details: v.optional(v.string()),
+    metadata: v.optional(v.string()), // JSON string for flexible data
     timestamp: v.number(),
   }).index("by_agent", ["agentId"])
-    .index("by_timestamp", ["timestamp"]),
+    .index("by_timestamp", ["timestamp"])
+    .index("by_type", ["type"]),
+
+  // System Status - NEW
+  systemStatus: defineTable({
+    key: v.string(), // "q_status", "last_heartbeat", etc.
+    value: v.string(),
+    updatedAt: v.number(),
+  }).index("by_key", ["key"]),
 });

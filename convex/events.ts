@@ -1,6 +1,15 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
+const eventTypeValidator = v.union(
+  v.literal("task"),
+  v.literal("cron"),
+  v.literal("meeting"),
+  v.literal("birthday"),
+  v.literal("deadline"),
+  v.literal("reminder")
+);
+
 export const list = query({
   args: {},
   handler: async (ctx) => {
@@ -21,12 +30,12 @@ export const listUpcoming = query({
       .order("asc")
       .collect();
     
-    return events.filter(e => e.startTime >= now && e.startTime <= endTime);
+    return events.filter(e => e.startTime >= now && e.startTime <= endTime && !e.completed);
   },
 });
 
 export const listByType = query({
-  args: { type: v.union(v.literal("task"), v.literal("cron"), v.literal("meeting")) },
+  args: { type: eventTypeValidator },
   handler: async (ctx, args) => {
     return await ctx.db
       .query("events")
@@ -35,11 +44,26 @@ export const listByType = query({
   },
 });
 
+export const listForMonth = query({
+  args: { year: v.number(), month: v.number() },
+  handler: async (ctx, { year, month }) => {
+    const start = new Date(year, month - 1, 1).getTime();
+    const end = new Date(year, month, 0, 23, 59, 59).getTime();
+    
+    const events = await ctx.db
+      .query("events")
+      .withIndex("by_start")
+      .collect();
+    
+    return events.filter(e => e.startTime >= start && e.startTime <= end);
+  },
+});
+
 export const create = mutation({
   args: {
     title: v.string(),
     description: v.optional(v.string()),
-    type: v.union(v.literal("task"), v.literal("cron"), v.literal("meeting")),
+    type: eventTypeValidator,
     startTime: v.number(),
     endTime: v.optional(v.number()),
     recurring: v.optional(v.string()),
@@ -65,13 +89,18 @@ export const update = mutation({
     id: v.id("events"),
     title: v.optional(v.string()),
     description: v.optional(v.string()),
+    type: v.optional(eventTypeValidator),
     startTime: v.optional(v.number()),
     endTime: v.optional(v.number()),
     recurring: v.optional(v.string()),
+    completed: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
-    await ctx.db.patch(id, updates);
+    const filtered = Object.fromEntries(
+      Object.entries(updates).filter(([_, v]) => v !== undefined)
+    );
+    await ctx.db.patch(id, filtered);
   },
 });
 
