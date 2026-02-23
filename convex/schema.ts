@@ -281,4 +281,33 @@ export default defineSchema({
   }).index("by_category", ["category"])
     .index("by_applied", ["applied"])
     .index("by_timestamp", ["timestamp"]),
+
+  // ============ EMAIL DRAFTS QUEUE ============
+  
+  // Email drafts created by Q, pending review/send
+  drafts: defineTable({
+    subject: v.string(),
+    to: v.string(),
+    body: v.string(),
+    threadId: v.optional(v.string()), // Gmail thread ID if reply
+    messageId: v.optional(v.string()), // Gmail message ID of draft
+    gmailDraftId: v.optional(v.string()), // Gmail draft resource ID
+    status: v.union(
+      v.literal("pending"),
+      v.literal("sent"),
+      v.literal("edited"),
+      v.literal("discarded")
+    ),
+    category: v.optional(v.union(
+      v.literal("client"),
+      v.literal("internal"),
+      v.literal("personal"),
+      v.literal("other")
+    )),
+    priority: v.optional(v.union(v.literal("urgent"), v.literal("normal"), v.literal("low"))),
+    createdAt: v.number(),
+    sentAt: v.optional(v.number()),
+  }).index("by_status", ["status"])
+    .index("by_createdAt", ["createdAt"])
+    .index("by_priority", ["priority"]),
 });

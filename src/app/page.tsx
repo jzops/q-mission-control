@@ -4,6 +4,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import Link from "next/link";
 import { ActivityFeed, ActivitySparkline } from "../components/ActivityFeed";
+import { QuickActions } from "../components/QuickActions";
 import { useEffect, useState } from "react";
 
 interface ProfitData {
@@ -141,6 +142,9 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* Quick Actions */}
+      <QuickActions />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">

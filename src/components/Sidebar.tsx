@@ -5,10 +5,12 @@ import { usePathname } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useState, useEffect } from "react";
+import { GlobalSearch } from "./GlobalSearch";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: "🏠" },
   { href: "/sessions", label: "Session Log", icon: "📜", badge: "new" },
+  { href: "/drafts", label: "Email Drafts", icon: "📧", badgeKey: "drafts" },
   { href: "/approvals", label: "Approvals", icon: "✋", badgeKey: "approvals" },
   { href: "/questions", label: "Questions", icon: "❓", badgeKey: "questions" },
   { href: "/decisions", label: "Decisions", icon: "🎯", badgeKey: "decisions" },
@@ -31,6 +33,7 @@ export function Sidebar() {
   const pendingApprovals = useQuery(api.approvals.getPendingCount);
   const pendingQuestions = useQuery(api.questions.getPendingCount);
   const unreviewedDecisions = useQuery(api.decisions.getUnreviewedCount);
+  const pendingDrafts = useQuery(api.drafts.getPendingCount);
   
   const lastHeartbeat = systemStatus?.last_heartbeat?.value 
     ? parseInt(systemStatus.last_heartbeat.value) 
@@ -59,15 +62,16 @@ export function Sidebar() {
       case "approvals": return pendingApprovals?.total || 0;
       case "questions": return pendingQuestions?.total || 0;
       case "decisions": return unreviewedDecisions || 0;
+      case "drafts": return pendingDrafts?.total || 0;
       default: return 0;
     }
   };
 
-  const totalBadges = (pendingApprovals?.total || 0) + (pendingQuestions?.total || 0) + (unreviewedDecisions || 0);
+  const totalBadges = (pendingApprovals?.total || 0) + (pendingQuestions?.total || 0) + (unreviewedDecisions || 0) + (pendingDrafts?.total || 0);
 
   const sidebarContent = (
     <>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-white flex items-center gap-2">
             <span className="animate-pulse">⚡</span>
@@ -85,6 +89,11 @@ export function Sidebar() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
+      </div>
+
+      {/* Global Search */}
+      <div className="mb-4">
+        <GlobalSearch />
       </div>
       
       <nav className="space-y-0.5 flex-1">
