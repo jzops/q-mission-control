@@ -310,4 +310,54 @@ export default defineSchema({
   }).index("by_status", ["status"])
     .index("by_createdAt", ["createdAt"])
     .index("by_priority", ["priority"]),
+
+  // ============ PHASE 2: BUSINESS METRICS ============
+
+  // OKRs - Objectives and Key Results
+  okrs: defineTable({
+    objective: v.string(), // The objective
+    keyResults: v.array(v.object({
+      description: v.string(),
+      target: v.number(),
+      current: v.number(),
+      unit: v.string(), // "$", "%", "count", etc.
+    })),
+    quarter: v.string(), // "Q1 2026"
+    status: v.union(v.literal("on_track"), v.literal("at_risk"), v.literal("behind"), v.literal("achieved")),
+    owner: v.string(), // "Joe", "Jake", "Team"
+    notes: v.optional(v.string()),
+    updatedAt: v.number(),
+    createdAt: v.number(),
+  }).index("by_quarter", ["quarter"])
+    .index("by_status", ["status"])
+    .index("by_owner", ["owner"]),
+
+  // Opportunities - Sales Pipeline
+  opportunities: defineTable({
+    name: v.string(), // Company/deal name
+    stage: v.union(
+      v.literal("lead"),
+      v.literal("qualified"),
+      v.literal("proposal"),
+      v.literal("negotiation"),
+      v.literal("closed_won"),
+      v.literal("closed_lost")
+    ),
+    value: v.number(), // Deal value in dollars
+    probability: v.number(), // 0-100
+    expectedClose: v.optional(v.number()), // Timestamp
+    owner: v.string(), // Sales rep
+    source: v.optional(v.string()), // "Vasco", "Manual", "HubSpot"
+    externalId: v.optional(v.string()), // ID from source system
+    contact: v.optional(v.string()), // Primary contact name
+    notes: v.optional(v.string()),
+    lastActivity: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_stage", ["stage"])
+    .index("by_owner", ["owner"])
+    .index("by_expectedClose", ["expectedClose"])
+    .searchIndex("search_name", {
+      searchField: "name",
+    }),
 });
