@@ -23,6 +23,7 @@ const navItems = [
   { href: "/calendar", label: "Calendar", icon: "📅" },
   { href: "/content", label: "Content", icon: "📝" },
   { href: "/team", label: "Team", icon: "👥" },
+  { href: "/skills", label: "Skills & SOPs", icon: "📋", badge: "new" },
   { href: "/office", label: "Office", icon: "🏢" },
 ];
 

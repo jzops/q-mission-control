@@ -311,6 +311,32 @@ export default defineSchema({
     .index("by_createdAt", ["createdAt"])
     .index("by_priority", ["priority"]),
 
+  // ============ SKILLS & SOPS ============
+
+  // Skills - LeanScale internal skills/SOPs from GitHub repo
+  skills: defineTable({
+    name: v.string(), // Display name
+    slug: v.string(), // Folder name / URL slug
+    description: v.string(), // Brief description
+    type: v.union(
+      v.literal("maker"), // SOW, PDF, PPTX, DOCX makers
+      v.literal("sop"), // Standard Operating Procedures
+      v.literal("tool"), // Tools like HubSpot Downloader
+      v.literal("internal") // Internal operating system docs
+    ),
+    content: v.optional(v.string()), // Full SKILL.md content
+    repoPath: v.string(), // Path in Skills-and-SOPs repo
+    hasReferences: v.boolean(), // Has /references folder
+    lastSynced: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_type", ["type"])
+    .index("by_slug", ["slug"])
+    .searchIndex("search_skills", {
+      searchField: "name",
+      filterFields: ["type"],
+    }),
+
   // ============ PHASE 2: BUSINESS METRICS ============
 
   // OKRs - Objectives and Key Results
