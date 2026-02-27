@@ -23,7 +23,13 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
 
-    const account = process.env.GMAIL_ACCOUNT || 'joe@leanscale.team';
+    const account = process.env.GMAIL_ACCOUNT;
+    if (!account) {
+      return NextResponse.json({
+        success: false,
+        error: 'Email sending not configured - missing GMAIL_ACCOUNT environment variable'
+      }, { status: 500 });
+    }
 
     // Build arguments array - execFile handles escaping automatically
     const args = [
@@ -34,20 +40,17 @@ export async function POST(request: Request) {
       '--body', body,
     ];
 
-    console.log('Sending email via gog...');
-
     // Use execFile instead of exec to prevent command injection
     // Arguments are passed as array, not string, so no shell escaping needed
-    const { stdout, stderr } = await execFileAsync('gog', args, {
-      timeout: 30000, // 30 second timeout
-      env: process.env, // GOG_KEYRING_PASSWORD already in env
+    const { stderr } = await execFileAsync('gog', args, {
+      timeout: 30000,
+      env: process.env,
     });
 
-    if (stderr && !stderr.includes('Successfully')) {
-      console.error('gog stderr:', stderr);
+    // Only treat as error if stderr contains actual error messages
+    if (stderr && !stderr.includes('Successfully') && stderr.includes('error')) {
+      throw new Error(stderr);
     }
-
-    console.log('gog stdout:', stdout);
 
     return NextResponse.json({
       success: true,
@@ -55,9 +58,7 @@ export async function POST(request: Request) {
       draftId,
     });
   } catch (error) {
-    console.error('Send email error:', error);
-
-    // Check if it's a command execution error
+    // Extract error message for response
     const errMsg = error instanceof Error ? error.message : 'Unknown error';
 
     return NextResponse.json({

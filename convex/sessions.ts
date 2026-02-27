@@ -113,27 +113,31 @@ export const logEntry = mutation({
       .withIndex("by_date", (q) => q.eq("date", today))
       .first();
     
+    let sessionId: typeof session._id;
+
     if (!session) {
-      const sessionId = await ctx.db.insert("sessions", {
+      sessionId = await ctx.db.insert("sessions", {
         date: today,
         totalActions: 0,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
-      session = await ctx.db.get(sessionId);
+    } else {
+      sessionId = session._id;
     }
-    
+
     // Create entry
     const entryId = await ctx.db.insert("sessionEntries", {
-      sessionId: session!._id,
+      sessionId,
       date: today,
       ...args,
       timestamp: Date.now(),
     });
-    
+
     // Update session count
-    await ctx.db.patch(session!._id, {
-      totalActions: (session!.totalActions || 0) + 1,
+    const currentSession = session || await ctx.db.get(sessionId);
+    await ctx.db.patch(sessionId, {
+      totalActions: (currentSession?.totalActions || 0) + 1,
       updatedAt: Date.now(),
     });
     

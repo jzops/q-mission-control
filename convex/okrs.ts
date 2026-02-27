@@ -53,10 +53,12 @@ export const create = mutation({
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // Calculate status based on progress
-    const totalProgress = args.keyResults.reduce((sum, kr) => {
-      return sum + (kr.current / kr.target) * 100;
-    }, 0) / args.keyResults.length;
+    // Calculate status based on progress (guard against division by zero)
+    const totalProgress = args.keyResults.length > 0
+      ? args.keyResults.reduce((sum, kr) => {
+          return sum + (kr.target > 0 ? (kr.current / kr.target) * 100 : 0);
+        }, 0) / args.keyResults.length
+      : 0;
     
     let status: "on_track" | "at_risk" | "behind" | "achieved" = "on_track";
     if (totalProgress >= 100) status = "achieved";
@@ -86,10 +88,12 @@ export const updateProgress = mutation({
     const keyResults = [...okr.keyResults];
     keyResults[keyResultIndex] = { ...keyResults[keyResultIndex], current };
     
-    // Recalculate status
-    const totalProgress = keyResults.reduce((sum, kr) => {
-      return sum + (kr.current / kr.target) * 100;
-    }, 0) / keyResults.length;
+    // Recalculate status (guard against division by zero)
+    const totalProgress = keyResults.length > 0
+      ? keyResults.reduce((sum, kr) => {
+          return sum + (kr.target > 0 ? (kr.current / kr.target) * 100 : 0);
+        }, 0) / keyResults.length
+      : 0;
     
     let status: "on_track" | "at_risk" | "behind" | "achieved" = "on_track";
     if (totalProgress >= 100) status = "achieved";

@@ -38,15 +38,15 @@ export const global = query({
       if (results.length >= limit) break;
     }
 
-    // Search people
+    // Search people (use search index)
     if (results.length < limit) {
-      const people = await ctx.db.query("people").collect();
-      for (const person of people) {
-        if (
-          person.name.toLowerCase().includes(searchQuery) ||
-          person.company?.toLowerCase().includes(searchQuery) ||
-          person.notes?.toLowerCase().includes(searchQuery)
-        ) {
+      try {
+        const people = await ctx.db
+          .query("people")
+          .withSearchIndex("search_name", (q) => q.search("name", searchQuery))
+          .take(limit - results.length);
+
+        for (const person of people) {
           results.push({
             type: "person",
             id: person._id,
@@ -55,7 +55,25 @@ export const global = query({
             href: "/people",
           });
         }
-        if (results.length >= limit) break;
+      } catch {
+        // Fall back to manual search if search index isn't ready
+        const people = await ctx.db.query("people").collect();
+        for (const person of people) {
+          if (
+            person.name.toLowerCase().includes(searchQuery) ||
+            person.company?.toLowerCase().includes(searchQuery) ||
+            person.notes?.toLowerCase().includes(searchQuery)
+          ) {
+            results.push({
+              type: "person",
+              id: person._id,
+              title: person.name,
+              subtitle: person.company,
+              href: "/people",
+            });
+          }
+          if (results.length >= limit) break;
+        }
       }
     }
 
