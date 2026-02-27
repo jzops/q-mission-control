@@ -1,6 +1,20 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
+// Stage type for opportunities
+const opportunityStage = v.union(
+  v.literal("lead"),
+  v.literal("qualified"),
+  v.literal("proposal"),
+  v.literal("negotiation"),
+  v.literal("closed_won"),
+  v.literal("closed_lost")
+);
+
+type OpportunityStage = "lead" | "qualified" | "proposal" | "negotiation" | "closed_won" | "closed_lost";
+
+const validStages: OpportunityStage[] = ["lead", "qualified", "proposal", "negotiation", "closed_won", "closed_lost"];
+
 // List opportunities
 export const list = query({
   args: {
@@ -86,22 +100,12 @@ export const create = mutation({
 export const updateStage = mutation({
   args: {
     id: v.id("opportunities"),
-    stage: v.union(
-      v.literal("lead"),
-      v.literal("qualified"),
-      v.literal("proposal"),
-      v.literal("negotiation"),
-      v.literal("closed_won"),
-      v.literal("closed_lost")
-    ),
+    stage: opportunityStage,
     notes: v.optional(v.string()),
   },
   handler: async (ctx, { id, stage, notes }) => {
-    const updates: any = { stage, updatedAt: Date.now(), lastActivity: Date.now() };
-    if (notes) updates.notes = notes;
-    
     // Update probability based on stage
-    const stageProbabilities: Record<string, number> = {
+    const stageProbabilities: Record<OpportunityStage, number> = {
       lead: 10,
       qualified: 25,
       proposal: 50,
@@ -109,8 +113,24 @@ export const updateStage = mutation({
       closed_won: 100,
       closed_lost: 0,
     };
-    updates.probability = stageProbabilities[stage];
-    
+
+    const updates: {
+      stage: OpportunityStage;
+      updatedAt: number;
+      lastActivity: number;
+      probability: number;
+      notes?: string;
+    } = {
+      stage,
+      updatedAt: Date.now(),
+      lastActivity: Date.now(),
+      probability: stageProbabilities[stage],
+    };
+
+    if (notes) {
+      updates.notes = notes;
+    }
+
     await ctx.db.patch(id, updates);
   },
 });
@@ -154,32 +174,55 @@ export const bulkUpsert = mutation({
   handler: async (ctx, { opportunities }) => {
     let created = 0;
     let updated = 0;
-    
+
     for (const opp of opportunities) {
-      // Check if exists by externalId
+      // Validate stage value
+      if (!validStages.includes(opp.stage as OpportunityStage)) {
+        console.warn(`Invalid stage "${opp.stage}" for opportunity "${opp.name}", skipping`);
+        continue;
+      }
+      const stage = opp.stage as OpportunityStage;
+
+      // Check if exists by externalId using index
       const existing = await ctx.db
         .query("opportunities")
-        .filter((q) => q.eq(q.field("externalId"), opp.externalId))
+        .withIndex("by_externalId", (q) => q.eq("externalId", opp.externalId))
         .first();
-      
+
       if (existing) {
         await ctx.db.patch(existing._id, {
-          ...opp,
-          stage: opp.stage as any,
+          name: opp.name,
+          stage,
+          value: opp.value,
+          probability: opp.probability,
+          expectedClose: opp.expectedClose,
+          owner: opp.owner,
+          source: opp.source,
+          externalId: opp.externalId,
+          contact: opp.contact,
+          notes: opp.notes,
           updatedAt: Date.now(),
         });
         updated++;
       } else {
         await ctx.db.insert("opportunities", {
-          ...opp,
-          stage: opp.stage as any,
+          name: opp.name,
+          stage,
+          value: opp.value,
+          probability: opp.probability,
+          expectedClose: opp.expectedClose,
+          owner: opp.owner,
+          source: opp.source,
+          externalId: opp.externalId,
+          contact: opp.contact,
+          notes: opp.notes,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         });
         created++;
       }
     }
-    
+
     return { created, updated };
   },
 });

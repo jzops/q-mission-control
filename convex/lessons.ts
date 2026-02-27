@@ -100,13 +100,23 @@ export const remove = mutation({
   },
 });
 
+// Category type for lessons
+const lessonCategory = v.union(
+  v.literal("communication"),
+  v.literal("technical"),
+  v.literal("prioritization"),
+  v.literal("style"),
+  v.literal("process"),
+  v.literal("other")
+);
+
 // Get lessons by category for AI to reference
 export const getByCategory = query({
-  args: { category: v.string() },
+  args: { category: lessonCategory },
   handler: async (ctx, { category }) => {
     return await ctx.db
       .query("lessons")
-      .withIndex("by_category", (q) => q.eq("category", category as any))
+      .withIndex("by_category", (q) => q.eq("category", category))
       .collect();
   },
 });

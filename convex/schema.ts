@@ -283,7 +283,7 @@ export default defineSchema({
     .index("by_timestamp", ["timestamp"]),
 
   // ============ EMAIL DRAFTS QUEUE ============
-  
+
   // Email drafts created by Q, pending review/send
   drafts: defineTable({
     subject: v.string(),
@@ -383,7 +383,74 @@ export default defineSchema({
   }).index("by_stage", ["stage"])
     .index("by_owner", ["owner"])
     .index("by_expectedClose", ["expectedClose"])
+    .index("by_externalId", ["externalId"])
     .searchIndex("search_name", {
       searchField: "name",
     }),
+
+  // ============================================================================
+  // GMAIL AUTO-REPLY TABLES
+  // ============================================================================
+
+  // Email Tone Profiles - stores learned writing style
+  emailToneProfiles: defineTable({
+    userId: v.string(), // Gmail address
+    profileData: v.object({
+      formalityLevel: v.number(),
+      averageSentenceLength: v.number(),
+      greetingPatterns: v.array(v.string()),
+      closingPatterns: v.array(v.string()),
+      commonPhrases: v.array(v.string()),
+      emojiUsage: v.boolean(),
+      responseLengthAvg: v.number(),
+      vocabularyComplexity: v.number(),
+      toneKeywords: v.array(v.string()),
+    }),
+    sampleCount: v.number(),
+    lastAnalyzedAt: v.number(),
+    createdAt: v.number(),
+  }).index("by_user", ["userId"]),
+
+  // Email Classifications - history of classified emails
+  emailClassifications: defineTable({
+    emailId: v.string(),
+    threadId: v.string(),
+    category: v.string(), // client, prospect, newsletter, notification, spam, unknown
+    confidence: v.number(),
+    priority: v.number(),
+    shouldAutoReply: v.boolean(),
+    reasoning: v.string(),
+    senderDomain: v.optional(v.string()),
+    processedAt: v.number(),
+  }).index("by_email", ["emailId"])
+    .index("by_category", ["category"])
+    .index("by_processed", ["processedAt"]),
+
+  // Email Drafts - tracks generated Gmail drafts (metadata only)
+  emailDrafts: defineTable({
+    draftId: v.string(), // Gmail draft ID
+    threadId: v.string(),
+    originalEmailId: v.string(),
+    status: v.union(v.literal("pending"), v.literal("sent"), v.literal("deleted")),
+    toneMatchScore: v.optional(v.number()),
+    createdAt: v.number(),
+    sentAt: v.optional(v.number()),
+  }).index("by_thread", ["threadId"])
+    .index("by_status", ["status"])
+    .index("by_draftId", ["draftId"]),
+
+  // Gmail Config - user's Gmail integration settings
+  gmailConfig: defineTable({
+    userId: v.string(), // Gmail address
+    enabled: v.boolean(),
+    autoReplyCategories: v.array(v.string()), // Which categories to auto-reply
+    excludedDomains: v.array(v.string()),
+    workingHours: v.optional(v.object({
+      start: v.number(), // Hour (0-23)
+      end: v.number(),
+      timezone: v.string(),
+    })),
+    lastSyncAt: v.number(),
+    tokenExpiresAt: v.optional(v.number()),
+  }).index("by_user", ["userId"]),
 });

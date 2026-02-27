@@ -1,11 +1,20 @@
 import { NextResponse } from 'next/server';
 
+// TODO: Implement Google Sheets integration for P&L data
+// This endpoint should:
+// 1. Connect to Google Sheets via gog or API
+// 2. Fetch real-time profit/MRR data
+// 3. Return formatted financial metrics
+//
+// Current status: Returns SAMPLE data for UI development
+// The dashboard depends on this endpoint - do not return 501
+
 export async function GET() {
   try {
-    // In production, this would call gog to fetch from Google Sheet
-    // For now, return sample data that can be updated later
+    // PLACEHOLDER DATA - Replace with Google Sheets integration
     return NextResponse.json({
       success: true,
+      isPlaceholder: true, // Flag to indicate this is sample data
       data: {
         mrr: '$503K',
         profit: '$127K',
