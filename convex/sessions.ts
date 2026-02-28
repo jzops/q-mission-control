@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 
 // Get all sessions
 export const list = query({
@@ -63,22 +64,26 @@ export const updateSummary = mutation({
 
 // Get entries for a session/date
 export const getEntries = query({
-  args: { 
+  args: {
     date: v.optional(v.string()),
     type: v.optional(v.string()),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { date, type, limit = 50 }) => {
-    let query = ctx.db.query("sessionEntries");
-    
+    let entries;
+
     if (date) {
-      query = query.withIndex("by_date", (q) => q.eq("date", date));
+      entries = await ctx.db.query("sessionEntries")
+        .withIndex("by_date", (q) => q.eq("date", date))
+        .order("desc")
+        .take(limit);
     } else {
-      query = query.withIndex("by_timestamp");
+      entries = await ctx.db.query("sessionEntries")
+        .withIndex("by_timestamp")
+        .order("desc")
+        .take(limit);
     }
-    
-    const entries = await query.order("desc").take(limit);
-    
+
     if (type) {
       return entries.filter(e => e.type === type);
     }
@@ -113,7 +118,7 @@ export const logEntry = mutation({
       .withIndex("by_date", (q) => q.eq("date", today))
       .first();
     
-    let sessionId: typeof session._id;
+    let sessionId: Id<"sessions">;
 
     if (!session) {
       sessionId = await ctx.db.insert("sessions", {

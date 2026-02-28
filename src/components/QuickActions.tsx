@@ -16,7 +16,7 @@ export function QuickActions({ onAction }: QuickActionsProps) {
   const [loading, setLoading] = useState<string | null>(null);
 
   const createTask = useMutation(api.tasks.create);
-  const createQuestion = useMutation(api.questions.create);
+  const askQuestion = useMutation(api.questions.ask);
 
   const actions = [
     {
@@ -78,7 +78,7 @@ export function QuickActions({ onAction }: QuickActionsProps) {
 
   const handleAskQuestion = async () => {
     if (!questionText.trim()) return;
-    await createQuestion({
+    await askQuestion({
       question: questionText,
       category: "decision",
       priority: "normal",

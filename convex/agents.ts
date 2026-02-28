@@ -58,7 +58,8 @@ export const updateStatus = mutation({
     if (args.status === "working" && args.currentTask) {
       await ctx.db.insert("activity", {
         agentId: id,
-        action: "started_task",
+        type: "task_started",
+        action: `Agent started: ${args.currentTask}`,
         details: args.currentTask,
         timestamp: Date.now(),
       });
@@ -118,6 +119,19 @@ export const logActivity = mutation({
   args: {
     agentId: v.id("agents"),
     action: v.string(),
+    type: v.union(
+      v.literal("task_started"),
+      v.literal("task_completed"),
+      v.literal("email_drafted"),
+      v.literal("memory_added"),
+      v.literal("cron_executed"),
+      v.literal("decision_made"),
+      v.literal("approval_requested"),
+      v.literal("question_asked"),
+      v.literal("heartbeat"),
+      v.literal("error"),
+      v.literal("info")
+    ),
     details: v.optional(v.string()),
   },
   handler: async (ctx, args) => {

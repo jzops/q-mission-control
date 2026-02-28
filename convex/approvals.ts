@@ -9,26 +9,30 @@ export const list = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { status, type, limit = 50 }) => {
-    let query = ctx.db.query("approvals");
-    
+    let results;
+
     if (status) {
-      query = query.withIndex("by_status", (q) => q.eq("status", status));
+      results = await ctx.db.query("approvals")
+        .withIndex("by_status", (q) => q.eq("status", status))
+        .order("desc")
+        .take(limit);
     } else {
-      query = query.withIndex("by_timestamp");
+      results = await ctx.db.query("approvals")
+        .withIndex("by_timestamp")
+        .order("desc")
+        .take(limit);
     }
-    
-    let results = await query.order("desc").take(limit);
-    
+
     if (type) {
       results = results.filter(a => a.type === type);
     }
-    
+
     // Sort pending by priority
-    const priorityOrder = { urgent: 0, normal: 1, low: 2 };
+    const priorityOrder: Record<string, number> = { urgent: 0, normal: 1, low: 2 };
     return results.sort((a, b) => {
       if (a.status === "pending" && b.status !== "pending") return -1;
       if (a.status !== "pending" && b.status === "pending") return 1;
-      return priorityOrder[a.priority] - priorityOrder[b.priority];
+      return (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2);
     });
   },
 });

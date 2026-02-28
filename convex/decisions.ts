@@ -9,16 +9,20 @@ export const list = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { reviewed, category, limit = 50 }) => {
-    let query = ctx.db.query("decisions");
-    
+    let decisions;
+
     if (reviewed !== undefined) {
-      query = query.withIndex("by_reviewed", (q) => q.eq("reviewed", reviewed));
+      decisions = await ctx.db.query("decisions")
+        .withIndex("by_reviewed", (q) => q.eq("reviewed", reviewed))
+        .order("desc")
+        .take(limit);
     } else {
-      query = query.withIndex("by_timestamp");
+      decisions = await ctx.db.query("decisions")
+        .withIndex("by_timestamp")
+        .order("desc")
+        .take(limit);
     }
-    
-    const decisions = await query.order("desc").take(limit);
-    
+
     if (category) {
       return decisions.filter(d => d.category === category);
     }

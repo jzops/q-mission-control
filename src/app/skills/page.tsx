@@ -77,7 +77,7 @@ export default function SkillsPage() {
   // Group by type
   const groupedSkills = filteredSkills?.reduce((acc, skill) => {
     if (!acc[skill.type]) acc[skill.type] = [];
-    acc[skill.type].push(skill);
+    acc[skill.type]!.push(skill);
     return acc;
   }, {} as Record<string, typeof skills>);
 

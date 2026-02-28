@@ -68,7 +68,7 @@ export default function PeoplePage() {
 
   const grouped = filteredPeople?.reduce((acc, person) => {
     if (!acc[person.relationship]) acc[person.relationship] = [];
-    acc[person.relationship].push(person);
+    acc[person.relationship]!.push(person);
     return acc;
   }, {} as Record<string, typeof people>);
 

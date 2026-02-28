@@ -9,20 +9,24 @@ export const list = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { category, applied, limit = 50 }) => {
-    let query = ctx.db.query("lessons");
-    
+    let results;
+
     if (applied !== undefined) {
-      query = query.withIndex("by_applied", (q) => q.eq("applied", applied));
+      results = await ctx.db.query("lessons")
+        .withIndex("by_applied", (q) => q.eq("applied", applied))
+        .order("desc")
+        .take(limit);
     } else {
-      query = query.withIndex("by_timestamp");
+      results = await ctx.db.query("lessons")
+        .withIndex("by_timestamp")
+        .order("desc")
+        .take(limit);
     }
-    
-    let results = await query.order("desc").take(limit);
-    
+
     if (category) {
       results = results.filter(l => l.category === category);
     }
-    
+
     return results;
   },
 });

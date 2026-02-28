@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 
-type EventType = "task" | "cron" | "meeting";
+type EventType = "task" | "cron" | "meeting" | "birthday" | "deadline" | "reminder";
 
 export default function CalendarPage() {
   const events = useQuery(api.events.list);

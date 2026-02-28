@@ -9,23 +9,27 @@ export const list = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { status, priority, limit = 50 }) => {
-    let query = ctx.db.query("questions");
-    
+    let results;
+
     if (status) {
-      query = query.withIndex("by_status", (q) => q.eq("status", status));
+      results = await ctx.db.query("questions")
+        .withIndex("by_status", (q) => q.eq("status", status))
+        .order("desc")
+        .take(limit);
     } else {
-      query = query.withIndex("by_timestamp");
+      results = await ctx.db.query("questions")
+        .withIndex("by_timestamp")
+        .order("desc")
+        .take(limit);
     }
-    
-    let results = await query.order("desc").take(limit);
-    
+
     if (priority) {
       results = results.filter(q => q.priority === priority);
     }
-    
+
     // Sort by priority (urgent first)
-    const priorityOrder = { urgent: 0, normal: 1, low: 2 };
-    return results.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+    const priorityOrder: Record<string, number> = { urgent: 0, normal: 1, low: 2 };
+    return results.sort((a, b) => (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2));
   },
 });
 
