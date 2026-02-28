@@ -51,3 +51,26 @@ curl -s "$CONVEX_URL/api/query" -H "Content-Type: application/json" \
 - `approval_requested`
 - `question_asked`
 - `heartbeat`, `error`, `info`
+
+## Session Logging (Q's Daily Work)
+
+Q should log work entries so Joe can see "What Q did while away":
+
+```bash
+curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
+  -d '{"path": "sessions:logEntry", "args": {"type": "email", "action": "Drafted reply to client", "reasoning": "Urgent request", "outcome": "Pending approval"}, "format": "json"}'
+```
+
+**Session Types:** `email`, `coding`, `research`, `automation`, `communication`, `memory`, `other`
+
+## Lessons Learned
+
+When Joe gives feedback or corrections, log it so Q remembers:
+
+```bash
+curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
+  -d '{"path": "lessons:add", "args": {"title": "Short title", "description": "What happened", "lesson": "What to do next time", "category": "communication", "source": "feedback"}, "format": "json"}'
+```
+
+**Categories:** `communication`, `technical`, `prioritization`, `style`, `process`, `other`
+**Sources:** `feedback`, `correction`, `observation`, `explicit`
