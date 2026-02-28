@@ -26,6 +26,28 @@ curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
   -d '{"path": "tasks:create", "args": {"title": "...", "assignee": "ai", "priority": "medium"}, "format": "json"}'
 ```
 
+### To ask Joe a question (Q → Joe):
+```bash
+curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
+  -d '{"path": "questions:ask", "args": {"question": "...", "category": "clarification", "priority": "normal"}, "format": "json"}'
+```
+**Categories:** `clarification`, `permission`, `preference`, `decision`, `technical`, `other`
+
+### To request approval (Q → Joe):
+```bash
+curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
+  -d '{"path": "approvals:request", "args": {"title": "...", "description": "...", "type": "email_send", "priority": "normal"}, "format": "json"}'
+```
+**Types:** `email_send`, `social_post`, `calendar_change`, `purchase`, `code_deploy`, `communication`, `other`
+
+### To log a decision Q made autonomously:
+```bash
+curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
+  -d '{"path": "decisions:log", "args": {"title": "...", "description": "...", "reasoning": "...", "category": "email", "impact": "low"}, "format": "json"}'
+```
+**Categories:** `email`, `scheduling`, `prioritization`, `communication`, `technical`, `other`
+**Impact:** `low`, `medium`, `high`
+
 ### To check Q's recent activity:
 ```bash
 curl -s "$CONVEX_URL/api/query" -H "Content-Type: application/json" \
