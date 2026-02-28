@@ -235,3 +235,38 @@ curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
 ```
 
 This makes Q appear "working" in the Office page with the task shown.
+
+---
+
+## Managing Sub-Agents (Q's Team)
+
+Q manages status for all team Claude instances:
+
+| Agent Name | Team Member |
+|------------|-------------|
+| Brady | Cam |
+| Jimothy | Brian |
+| Rascal | Derek |
+| Rufus | Izzy |
+| Archie | John |
+| Maxwell | Christopher |
+| Edgar | Eduardo |
+| Girth Brooks | Tech Ops |
+| Ben | Finance/HR |
+| TaskMaster | Task Mgmt |
+| Labrador-7 | Research |
+| Rodolfo | Operations |
+
+When delegating to a sub-agent:
+```bash
+curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
+  -d '{"path": "agents:updateStatusByName", "args": {"name": "Brady", "status": "working", "currentTask": "Building client dashboard"}, "format": "json"}'
+```
+
+When their task completes:
+```bash
+curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
+  -d '{"path": "agents:updateStatusByName", "args": {"name": "Brady", "status": "idle"}, "format": "json"}'
+```
+
+This keeps the Office page showing who's working on what without requiring each team member to set anything up.
