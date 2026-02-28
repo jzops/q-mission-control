@@ -31,11 +31,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
+      <head>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+      </head>
       <body className={`${inter.className} bg-gray-950 text-white`}>
         <ConvexClientProvider>
-          <div className="flex h-screen">
+          <div className="flex min-h-screen">
             <Sidebar />
-            <main className="flex-1 overflow-auto p-4 md:p-6 pt-16 md:pt-6">
+            <main className="flex-1 overflow-auto p-4 md:p-6 pt-16 pb-20 md:pt-6 md:pb-6">
               {children}
             </main>
           </div>

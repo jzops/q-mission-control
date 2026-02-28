@@ -130,3 +130,51 @@ body {
   background: inherit;
   animation: status-pulse 2s infinite;
 }
+
+/* iOS Safe Area Support */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Touch feedback */
+@media (hover: none) {
+  .active\:scale-95:active {
+    transform: scale(0.95);
+  }
+
+  .active\:scale-\[0\.98\]:active {
+    transform: scale(0.98);
+  }
+}
+
+/* Prevent text selection on interactive elements (mobile) */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbars on mobile but allow scrolling */
+@media (max-width: 768px) {
+  .overflow-y-auto::-webkit-scrollbar,
+  .overflow-auto::-webkit-scrollbar {
+    display: none;
+  }
+
+  .overflow-y-auto,
+  .overflow-auto {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
