@@ -127,3 +127,71 @@ export const logActivity = mutation({
     });
   },
 });
+
+// Find agent by name
+export const getByName = query({
+  args: { name: v.string() },
+  handler: async (ctx, args) => {
+    const agents = await ctx.db.query("agents").collect();
+    return agents.find((a) => a.name.toLowerCase() === args.name.toLowerCase());
+  },
+});
+
+// Update status by name (easier for Q to use)
+export const updateStatusByName = mutation({
+  args: {
+    name: v.string(),
+    status: v.union(v.literal("idle"), v.literal("working"), v.literal("offline")),
+    currentTask: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const agents = await ctx.db.query("agents").collect();
+    const agent = agents.find((a) => a.name.toLowerCase() === args.name.toLowerCase());
+
+    if (!agent) {
+      throw new Error(`Agent "${args.name}" not found`);
+    }
+
+    await ctx.db.patch(agent._id, {
+      status: args.status,
+      currentTask: args.currentTask,
+    });
+
+    // Log activity when starting work
+    if (args.status === "working" && args.currentTask) {
+      await ctx.db.insert("activity", {
+        agentId: agent._id,
+        agentName: agent.name,
+        type: "task_started",
+        action: `${agent.name} started: ${args.currentTask}`,
+        details: args.currentTask,
+        timestamp: Date.now(),
+      });
+    }
+
+    return { success: true, agentId: agent._id };
+  },
+});
+
+// Remove duplicate agents (cleanup utility)
+export const removeDuplicates = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const agents = await ctx.db.query("agents").collect();
+    const seen = new Map<string, string>();
+    const removed: string[] = [];
+
+    for (const agent of agents) {
+      const key = `${agent.name}-${agent.role}`;
+      if (seen.has(key)) {
+        // This is a duplicate, remove it
+        await ctx.db.delete(agent._id);
+        removed.push(agent.name);
+      } else {
+        seen.set(key, agent._id);
+      }
+    }
+
+    return { removed, count: removed.length };
+  },
+});

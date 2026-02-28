@@ -212,12 +212,26 @@ curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
 
 ---
 
-## Agent Status
+## Agent Status (Office Page)
 
-Update Q's own status:
+Update Q's status BY NAME (no ID needed):
 
 ```bash
 curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
-  -d '{"path": "agents:updateStatus", "args": {"id": "agent_id", "status": "working", "currentTask": "Reviewing inbox"}, "format": "json"}'
+  -d '{"path": "agents:updateStatusByName", "args": {"name": "Q", "status": "working", "currentTask": "Reviewing inbox"}, "format": "json"}'
 ```
 **Status:** `idle`, `working`, `offline`
+
+When starting a task:
+```bash
+curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
+  -d '{"path": "agents:updateStatusByName", "args": {"name": "Q", "status": "working", "currentTask": "Drafting client email"}, "format": "json"}'
+```
+
+When done:
+```bash
+curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
+  -d '{"path": "agents:updateStatusByName", "args": {"name": "Q", "status": "idle"}, "format": "json"}'
+```
+
+This makes Q appear "working" in the Office page with the task shown.
