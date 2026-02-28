@@ -96,3 +96,99 @@ curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
 
 **Categories:** `communication`, `technical`, `prioritization`, `style`, `process`, `other`
 **Sources:** `feedback`, `correction`, `observation`, `explicit`
+
+---
+
+## Heartbeat (CRITICAL - Run every 2-5 minutes)
+
+Q must call this regularly so the dashboard shows "Q is Online":
+
+```bash
+curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
+  -d '{"path": "systemStatus:heartbeat", "args": {"currentTask": "Processing emails"}, "format": "json"}'
+```
+
+If Q stops calling this, the dashboard shows "Q is Offline" after 5 minutes.
+
+---
+
+## Email Drafts (For Joe's Review)
+
+When Q drafts an email, submit it for Joe's approval:
+
+```bash
+curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
+  -d '{"path": "drafts:create", "args": {"subject": "Re: Meeting", "to": "client@example.com", "body": "...", "category": "client", "priority": "normal"}, "format": "json"}'
+```
+**Categories:** `client`, `internal`, `personal`, `other`
+**Priority:** `urgent`, `normal`, `low`
+
+After Joe approves and sends:
+```bash
+curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
+  -d '{"path": "drafts:markSent", "args": {"id": "draft_id_here"}, "format": "json"}'
+```
+
+---
+
+## Memories (Knowledge Base)
+
+Store important information Q learns:
+
+```bash
+curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
+  -d '{"path": "memories:create", "args": {"title": "Client prefers Slack", "content": "John at Acme prefers Slack over email for quick questions", "category": "preference", "source": "observation"}, "format": "json"}'
+```
+
+---
+
+## Calendar Events
+
+Create events for the calendar:
+
+```bash
+curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
+  -d '{"path": "events:create", "args": {"title": "Client call", "type": "meeting", "startTime": 1709251200000}, "format": "json"}'
+```
+**Types:** `task`, `cron`, `meeting`, `birthday`, `deadline`, `reminder`
+
+---
+
+## People/Contacts
+
+Add or update contacts:
+
+```bash
+curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
+  -d '{"path": "people:create", "args": {"name": "John Smith", "relationship": "client", "company": "Acme Inc", "email": "john@acme.com"}, "format": "json"}'
+```
+**Relationships:** `family`, `team`, `client`, `contact`
+
+Record when you contacted someone:
+```bash
+curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
+  -d '{"path": "people:recordContact", "args": {"id": "person_id_here"}, "format": "json"}'
+```
+
+---
+
+## Cron Jobs (Automated Tasks)
+
+After running a scheduled task, record it:
+
+```bash
+curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
+  -d '{"path": "cronJobs:recordRun", "args": {"id": "cron_id", "success": true, "output": "Processed 5 emails"}, "format": "json"}'
+```
+
+---
+
+## Agent Status
+
+Update Q's own status:
+
+```bash
+curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
+  -d '{"path": "agents:updateStatus", "args": {"id": "agent_id", "status": "working", "currentTask": "Reviewing inbox"}, "format": "json"}'
+```
+**Status:** `idle`, `working`, `offline`
