@@ -99,6 +99,35 @@ curl -s "$CONVEX_URL/api/mutation" -H "Content-Type: application/json" \
 
 ---
 
+## GitHub Actions: Gmail Auto-Reply Integration
+
+**NOTE:** Email processing is handled by a GitHub Actions workflow, NOT Q's cron job.
+
+**Repo:** `Skills-and-SOPs`
+**Workflow:** `.github/workflows/gmail-auto-reply.yml`
+**Schedule:** Every 10 min (business hours), every 30 min (off-hours)
+
+### What it does:
+1. Reads unread emails from Gmail
+2. Classifies them (client, newsletter, spam, etc.)
+3. Generates AI-powered draft replies using Claude
+4. Creates drafts IN-THREAD in Gmail
+5. **Syncs to Mission Control** via Convex:
+   - Drafts appear in the `/drafts` page for Joe's review
+   - Activity logs appear in the activity feed
+   - Tone profile is synced to `emailToneProfiles` table
+
+### Q should NOT:
+- Run his own email cron job (it's handled by GitHub Actions)
+- Call `drafts:create` for emails (the workflow does this)
+
+### Q CAN:
+- Query drafts to see what's pending: `drafts:list`
+- Check email activity in the feed
+- Ask questions about emails that need clarification
+
+---
+
 ## Heartbeat (CRITICAL - Run every 2-5 minutes)
 
 Q must call this regularly so the dashboard shows "Q is Online":
